@@ -333,6 +333,8 @@ struct usba_udc {
 
 	/* Serialize start/stop and role/VBUS transitions */
 	struct mutex state_lock;
+	/* Serialize clock/phy/pm transitions */
+	struct mutex clock_lock;
 
 	void __iomem *regs;
 	void __iomem *fifo;
@@ -353,6 +355,7 @@ struct usba_udc {
 	bool bias_pulse_needed;
 	unsigned long udc_irq_delayed_events;
 	struct delayed_work udc_irq_delayed_work;
+	bool shutting_down;
 	bool clocked;
 	bool suspended;
 #if IS_ENABLED(CONFIG_USB_ROLE_SWITCH)
