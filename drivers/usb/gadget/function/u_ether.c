@@ -1089,6 +1089,9 @@ void gether_cleanup(struct eth_dev *dev)
 	if (!dev)
 		return;
 
+	/* Drop parent device link before netdev teardown. */
+	SET_NETDEV_DEV(dev->net, NULL);
+
 	unregister_netdev(dev->net);
 	flush_work(&dev->work);
 	free_netdev(dev->net);
@@ -1114,10 +1117,20 @@ EXPORT_SYMBOL_GPL(gether_cleanup);
 struct net_device *gether_connect(struct gether *link)
 {
 	struct eth_dev		*dev = link->ioport;
+	struct usb_gadget	*gadget;
 	int			result = 0;
 
 	if (!dev)
 		return ERR_PTR(-EINVAL);
+
+	gadget = (link->func.config && link->func.config->cdev) ?
+		link->func.config->cdev->gadget : NULL;
+	if (!gadget)
+		return ERR_PTR(-ENODEV);
+
+	/* Refresh netdev parent from the current gadget instance. */
+	dev->gadget = gadget;
+	SET_NETDEV_DEV(dev->net, &gadget->dev);
 
 	link->in_ep->driver_data = dev;
 	result = usb_ep_enable(link->in_ep);
@@ -1242,6 +1255,9 @@ void gether_disconnect(struct gether *link)
 	dev->port_usb = NULL;
 	link->is_suspend = false;
 	spin_unlock(&dev->lock);
+
+	/* Prevent stale parent references after link teardown. */
+	SET_NETDEV_DEV(dev->net, NULL);
 }
 EXPORT_SYMBOL_GPL(gether_disconnect);
 
