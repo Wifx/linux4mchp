@@ -10,6 +10,7 @@
 #include <linux/gpio/consumer.h>
 #include <linux/phy/phy.h>
 #include <linux/usb/role.h>
+#include <linux/workqueue.h>
 
 /* USB register offsets */
 #define USBA_CTRL				0x0000
@@ -350,6 +351,8 @@ struct usba_udc {
 	struct clk *hclk;
 	struct usba_ep *usba_ep;
 	bool bias_pulse_needed;
+	unsigned long udc_irq_delayed_events;
+	struct delayed_work udc_irq_delayed_work;
 	bool clocked;
 	bool suspended;
 #if IS_ENABLED(CONFIG_USB_ROLE_SWITCH)
