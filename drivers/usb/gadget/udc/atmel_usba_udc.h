@@ -9,6 +9,7 @@
 
 #include <linux/gpio/consumer.h>
 #include <linux/phy/phy.h>
+#include <linux/usb/role.h>
 
 /* USB register offsets */
 #define USBA_CTRL				0x0000
@@ -329,8 +330,8 @@ struct usba_udc {
 	/* Protect hw registers from concurrent modifications */
 	spinlock_t lock;
 
-	/* Mutex to prevent concurrent start or stop */
-	struct mutex vbus_mutex;
+	/* Serialize start/stop and role/VBUS transitions */
+	struct mutex state_lock;
 
 	void __iomem *regs;
 	void __iomem *fifo;
@@ -341,6 +342,8 @@ struct usba_udc {
 	const struct usba_udc_errata *errata;
 	int irq;
 	struct gpio_desc *vbus_pin;
+	struct usb_role_switch *role_sw;
+	enum usb_role role_sw_current;
 	int num_ep;
 	struct usba_fifo_cfg *fifo_cfg;
 	struct clk *pclk;
@@ -349,6 +352,9 @@ struct usba_udc {
 	bool bias_pulse_needed;
 	bool clocked;
 	bool suspended;
+#if IS_ENABLED(CONFIG_USB_ROLE_SWITCH)
+	bool mux_is_host;
+#endif
 	bool ep_prealloc;
 
 	u16 devstatus;

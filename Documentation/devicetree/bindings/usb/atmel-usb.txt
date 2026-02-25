@@ -103,6 +103,10 @@ Deprecated property:
 Optional properties:
  - atmel,vbus-gpio: If present, specifies a gpio that allows to detect whether
    vbus is present (USB is connected).
+ - usb-role-switch: If present, registers the UDC as a USB role-switch
+	 provider and allows selecting USB_ROLE_NONE / USB_ROLE_DEVICE / USB_ROLE_HOST.
+	 In this mode, role selection is driven by the role-switch framework.
+	 This property must not be used together with atmel,vbus-gpio.
 
 Deprecated child node properties:
  - name: Name of the endpoint.
@@ -122,4 +126,16 @@ usb2: gadget@fff78000 {
 	clocks = <&utmi>, <&udphs_clk>;
 	clock-names = "hclk", "pclk";
 	atmel,vbus-gpio = <&pioB 19 0>;
+};
+
+usb2: gadget@fff78000 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "atmel,at91sam9rl-udc";
+	reg = <0x00600000 0x80000
+	       0xfff78000 0x400>;
+	interrupts = <27 4 0>;
+	clocks = <&utmi>, <&udphs_clk>;
+	clock-names = "hclk", "pclk";
+	usb-role-switch;
 };
