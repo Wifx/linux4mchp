@@ -337,6 +337,10 @@ static void ohci_at91_usb_set_power(struct at91_usbh_data *pdata, int port, int 
 	if (!valid_port(port))
 		return;
 
+	/* No-op if no VBUS GPIO for this port (VBUS controlled externally) */
+	if (!pdata->vbus_pin[port])
+		return;
+
 	gpiod_set_value(pdata->vbus_pin[port], enable);
 }
 
@@ -345,6 +349,12 @@ static int ohci_at91_usb_get_power(struct at91_usbh_data *pdata, int port)
 	if (!valid_port(port))
 		return -EINVAL;
 
+	/*
+	 * If there is no VBUS GPIO, assume power is managed externally and is
+	 * present from the HCD perspective (keep PPS set).
+	 */
+	if (!pdata->vbus_pin[port])
+		return 1;
 	return gpiod_get_value(pdata->vbus_pin[port]);
 }
 
@@ -518,6 +528,11 @@ static int ohci_at91_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		dev_dbg(hcd->self.controller, "GetPortStatus(%d)\n", wIndex);
 
 		if (valid_port(wIndex)) {
+			/*
+			 * If no VBUS GPIO, ohci_at91_usb_get_power() returns 1
+			 * (power assumed externally), so keep PPS set. If GPIO
+			 * exists and reads 0, clear PPS.
+			 */
 			if (!ohci_at91_usb_get_power(pdata, wIndex))
 				*data &= ~cpu_to_le32(RH_PS_PPS);
 
@@ -544,6 +559,9 @@ static irqreturn_t ohci_hcd_at91_overcurrent_irq(int irq, void *data)
 	/* From the GPIO notifying the over-current situation, find
 	 * out the corresponding port */
 	at91_for_each_port(port) {
+		if (!pdata->overcurrent_pin[port])
+			continue;
+
 		if (gpiod_to_irq(pdata->overcurrent_pin[port]) == irq)
 			break;
 	}
@@ -623,7 +641,22 @@ static int ohci_hcd_at91_drv_probe(struct platform_device *pdev)
 						      i, GPIOD_OUT_HIGH);
 		if (IS_ERR(pdata->vbus_pin[i])) {
 			err = PTR_ERR(pdata->vbus_pin[i]);
-			dev_err(&pdev->dev, "unable to claim gpio \"vbus\": %d\n", err);
+			if (err == -EPROBE_DEFER)
+				return err;
+			dev_err(&pdev->dev, "unable to claim gpio \"vbus\" for port %d: %d\n", i, err);
+			pdata->vbus_pin[i] = NULL;
+			continue;
+		}
+		/*
+		 * VBUS GPIO is optional and may be NULL e.g. VBUS is managed by
+		 * external glue/Type‑C/PMIC driver. ohci_at91_usb_[get/set]_power
+		 * handle this NULL state (no-op for set, assume powered for get).
+		 */
+		if (!pdata->vbus_pin[i]) {
+			/* Optional VBUS: not provided for this port */
+			dev_dbg(&pdev->dev,
+				"gpio \"vbus\" for port %d not provided, feature disabled for this port\n",
+				i);
 			continue;
 		}
 	}
@@ -635,13 +668,22 @@ static int ohci_hcd_at91_drv_probe(struct platform_device *pdev)
 		pdata->overcurrent_pin[i] =
 			devm_gpiod_get_index_optional(&pdev->dev, "atmel,oc",
 						      i, GPIOD_IN);
-		if (!pdata->overcurrent_pin[i])
-			continue;
 		if (IS_ERR(pdata->overcurrent_pin[i])) {
 			err = PTR_ERR(pdata->overcurrent_pin[i]);
-			dev_err(&pdev->dev, "unable to claim gpio \"overcurrent\": %d\n", err);
+			if (err == -EPROBE_DEFER)
+				return err;
+			dev_err(&pdev->dev, "unable to claim gpio \"overcurrent\" for port %d: %d\n", i, err);
+			pdata->overcurrent_pin[i] = NULL;
 			continue;
 		}
+		if (!pdata->overcurrent_pin[i]) {
+			/* Optional Overcurrent: not provided for this port */
+			dev_dbg(&pdev->dev,
+				"gpio \"overcurrent\" for port %d not provided, feature disabled for this port\n",
+				i);
+			continue;
+		}
+
 
 		ret = devm_request_irq(&pdev->dev,
 				       gpiod_to_irq(pdata->overcurrent_pin[i]),
