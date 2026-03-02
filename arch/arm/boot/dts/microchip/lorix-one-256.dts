@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * lorix-one-256.dts
+ *  Device Tree file for the LORIX One (256MB) LoRa gateway from
+ *  Wifx SA
+ *
+ *  Copyright (C) 2018 Wifx SA,
+ *                2018 Yannick Lanz <yannick.lanz@wifx.net>
+ *                2026 Yannick Serafini <yannick.serafini@wifx.net>
+ */
+/dts-v1/;
+#include "lorix-one-base.dtsi"
+
+/ {
+	model = "Wifx LORIX One (256MB NAND version)";
+	compatible = "wifx,lorix-one-256", "atmel,sama5d4", "atmel,sama5";
+
+	ahb {
+		ebi: ebi@10000000 {
+			nand_controller: nand-controller {
+				status = "okay";
+
+				nand@3 {
+					reg = <0x3 0x0 0x2>;
+					atmel,rb = <0>;
+					nand-bus-width = <8>;
+					nand-ecc-mode = "hw";
+					nand-ecc-strength = <4>;
+					nand-ecc-step-size = <512>;
+					nand-on-flash-bbt;
+					label = "atmel_nand";
+
+					partitions {
+						compatible = "fixed-partitions";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						at91bootstrap@0 {
+							label = "at91bootstrap";
+							reg = <0x0 0x40000>;
+						};
+
+						uboot@40000 {
+							label = "uboot";
+							reg = <0x40000 0xC0000>;
+						};
+
+						uboot-env@100000 {
+							label = "uboot-env";
+							reg = <0x100000 0x80000>;
+						};
+
+						ubi@180000 {
+							label = "ubi";
+							reg = <0x180000 0x0FE80000>;
+						};
+					};
+				};
+			};
+		};
+	};
+};

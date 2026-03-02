@@ -161,4 +161,12 @@ config LEDS_TRIGGER_INPUT_EVENTS
 
 	  When build as a module this driver will be called ledtrig-input-events.
 
+config LEDS_TRIGGER_USB_DATA_ROLE
+	tristate "USB DRD data mode trigger for the Wifx board EC LED"
+	depends on USB_WIFX_DRD_GLUE && OF
+	help
+	  This allows Wifx board EC LEDs to be controlled by the USB data role
+	  (device, host) provided by the Wifx USB DRD glue driver
+	  (wifx_usb_drd_glue) used as trigger source.
+
 endif # LEDS_TRIGGERS

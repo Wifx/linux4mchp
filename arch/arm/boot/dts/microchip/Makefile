@@ -94,7 +94,10 @@ dtb-$(CONFIG_SOC_SAM_V7) += \
 	at91-sama5d4_ma5d4evk.dtb \
 	at91-sama5d4_xplained.dtb \
 	at91-sama5d4ek.dtb \
-	at91-vinco.dtb
+	at91-vinco.dtb \
+	lorix-one-256.dtb \
+	lorix-one-512.dtb \
+	l1.dtb
 dtb-$(CONFIG_SOC_SAMA7D65) += \
 	at91-sama7d65_curiosity.dtb \
 	at91-sama7d65_curiosity_pro.dtb \

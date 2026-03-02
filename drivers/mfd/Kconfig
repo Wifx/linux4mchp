@@ -124,6 +124,75 @@ config PMIC_ADP5520
 	  individual components like LCD backlight, LEDs, GPIOs and Kepad
 	  under the corresponding menus.
 
+config PMIC_LORIX_ONE
+	tristate "LORIX One PMIC Core Support"
+	select MFD_CORE
+	depends on I2C
+	help
+	  Say yes here to add support for reset controller/PMIC integrated
+	  on LORIX One main PCB and based on ATTiny microcontroller.
+	  This includes the I2C driver and the core API _only_, you have to
+	  select individual components likes LEDs and reset status under the
+	  corresponding menus.
+
+config MFD_WGW_EC_CORE
+	tristate "Wifx EC core and multifunction device"
+	select MFD_CORE
+	depends on OF
+	help
+	  Say Y/M to enable the core driver for the Wifx Embedded Controller (EC).
+	  This core driver (wgw-ec-core) binds to the Device Tree child node
+	  (compatible "wifx,wgw-ec-core"), handles detection, IRQ and GPIOs,
+	  caches device information, and instantiates sub-devices (USB Type-C,
+	  LEDs, character device, sysfs, etc). You also need to enable at least
+	  one transport driver to talk to the EC (e.g. I2C).
+	  
+	  To compile this driver as a module, choose M: the module will be
+	  called wgw-ec-core.
+
+config MFD_WGW_EC_I2C
+	tristate "Wifx EC transport over I2C"
+	depends on MFD_WGW_EC_CORE && I2C && OF
+	help
+	  Say Y/M here to enable I2C transport for the Wifx EC. This driver
+	  implements the SMBus-like protocol (with checksum) required to
+	  communicate with the EC, and exposes bus operations to the core driver.
+	  
+	  To compile this driver as a module, choose M.
+
+config MFD_WGW_EC_USBC
+	tristate "USB Type-C management through Wifx EC"
+	depends on MFD_WGW_EC_CORE && TYPEC
+	select USB_ROLE_SWITCH
+	help
+	  Say Y/M to enable the USB Type-C sub-driver managed by the EC.
+	  It is instantiated by the core and requires a proper DT description.
+	  
+	  To compile this driver as a module, choose M: the module will
+	  be called wgw-ec-usbc.
+
+config MFD_WGW_EC_CHARDEV
+	tristate "Wifx EC miscdevice character device"
+	depends on MFD_WGW_EC_CORE
+	default MFD_WGW_EC_CORE
+	help
+	  Say Y/M to enable a character device interface to the Wifx EC
+	  for userspace access.
+	  
+	  To compile this driver as a module, choose M: the module will
+	  be called wgw-ec-chardev.
+
+config MFD_WGW_EC_SYSFS
+	tristate "Wifx EC control and information via sysfs"
+	depends on MFD_WGW_EC_CORE && SYSFS
+	default MFD_WGW_EC_CORE
+	help
+	  Say Y/M to expose sysfs attributes for controlling and reading
+	  information from the Wifx EC.
+	  
+	  To compile this driver as a module, choose M: the module will
+	  be called wgw-ec-sysfs.
+
 config MFD_AAT2870_CORE
 	bool "AnalogicTech AAT2870"
 	select MFD_CORE

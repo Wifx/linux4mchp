@@ -343,3 +343,17 @@ config USB_ONBOARD_DEV_USB5744
 	  during hub start-up configuration stage. It is must to enable this
 	  option on AMD Kria KR260 Robotics Starter Kit as this hub is
 	  connected to USB-SD converter which mounts the root filesystem.
+
+config USB_WIFX_DRD_GLUE
+	tristate "Wifx USB DRD glue (OTG policy)"
+	depends on OF
+	depends on USB_GADGET
+	select USB_ROLE_SWITCH
+	help
+	  Policy driver for SAMA5 Atmel USBA UDC to coordinate OTG roles using
+	  gpio-usb-b-connector or a Type-C controller. Informs the UDC about
+	  role/VBUS presence via usb-role-switch.
+
+	  Optional features depend on kernel configuration:
+	    - GPIO ID/VBUS inputs require GPIOLIB
+	    - VBUS supply control requires REGULATOR
