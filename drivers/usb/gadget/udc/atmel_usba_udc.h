@@ -260,6 +260,13 @@ enum usba_ctrl_state {
   EP_STATE_HALT,
 */
 
+enum usba_state {
+	USBA_STATE_UNINIT = 0,
+	USBA_STATE_ACTIVE,
+	USBA_STATE_SUSPENDED,
+	USBA_STATE_STOPPED,
+};
+
 struct usba_dma_desc {
 	dma_addr_t next;
 	dma_addr_t addr;
@@ -331,10 +338,8 @@ struct usba_udc {
 	/* Protect hw registers from concurrent modifications */
 	spinlock_t lock;
 
-	/* Serialize start/stop and role/VBUS transitions */
-	struct mutex state_lock;
-	/* Serialize clock/phy/pm transitions */
-	struct mutex clock_lock;
+	/* Serialize start/stop, role/VBUS and PM/clock/phy transitions */
+	struct mutex pm_mutex;
 
 	void __iomem *regs;
 	void __iomem *fifo;
@@ -355,12 +360,9 @@ struct usba_udc {
 	bool bias_pulse_needed;
 	unsigned long udc_irq_delayed_events;
 	struct delayed_work udc_irq_delayed_work;
-	bool shutting_down;
-	bool clocked;
-	bool suspended;
-#if IS_ENABLED(CONFIG_USB_ROLE_SWITCH)
 	bool mux_is_host;
-#endif
+	enum usba_state state;
+	bool clocked;
 	bool ep_prealloc;
 
 	u16 devstatus;
