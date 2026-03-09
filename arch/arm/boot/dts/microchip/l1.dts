@@ -101,8 +101,8 @@
 			i2c2: i2c@f8024000 {
 				status = "okay";
 				clock-frequency = <400000>;
-				i2c-digital-filter = "true";
-				i2c-analog-filter = "true";
+				i2c-digital-filter;
+				i2c-analog-filter;
 
 				board-ec@2a {
 					compatible = "wifx,wgw-ec-i2c";
