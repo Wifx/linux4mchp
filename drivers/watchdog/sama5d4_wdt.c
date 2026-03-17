@@ -6,6 +6,7 @@
  */
 
 #include <linux/delay.h>
+#include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
@@ -378,7 +379,23 @@ static struct platform_driver sama5d4_wdt_driver = {
 		.of_match_table = sama5d4_wdt_of_match,
 	}
 };
-module_platform_driver(sama5d4_wdt_driver);
+
+static int __init sama5d4_wdt_driver_init(void)
+{
+	return platform_driver_register(&sama5d4_wdt_driver);
+}
+
+#ifdef MODULE
+module_init(sama5d4_wdt_driver_init);
+#else
+subsys_initcall(sama5d4_wdt_driver_init);
+#endif
+
+static void __exit sama5d4_wdt_driver_exit(void)
+{
+	platform_driver_unregister(&sama5d4_wdt_driver);
+}
+module_exit(sama5d4_wdt_driver_exit);
 
 MODULE_AUTHOR("Atmel Corporation");
 MODULE_DESCRIPTION("Atmel SAMA5D4 Watchdog Timer driver");
